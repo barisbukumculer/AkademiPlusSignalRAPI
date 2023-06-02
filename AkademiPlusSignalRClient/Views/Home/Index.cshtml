@@ -16,13 +16,69 @@
                 statusshow();
             });
             $("#btnsave").click(() => {
-                connection.invoke("Sendname",$("#txtname").val())
+                connection.invoke("Sendname", $("#txtname").val())
             });
-            connection.on("receivename",(name)=>{
+            connection.on("receivename", (name) => {
                 console.log(name);
+                $("#nameslist").append(`<li class="list-group-item">${name}</li>`);
             });
             connection.on("receiveclientcount", (ClientCount) => {
                 $("#ClientCount").text(ClientCount);
+            });
+            connection.on("Notify", countText => {
+                $("#notify").html(`<div class="alert alert-success">${countText}</div>`);
+            });
+            connection.on("Error", (errorText) => {
+                alert(errorText);
+            });
+            connection.on("receivenames", (Names) => {
+                $("#nameslist").empty();
+                Names.forEach((item, index) => {
+                    $("#nameslist").append(`<li class="list-group-item">${item}</li>`);
+                });
+            });
+            $("#btnroomname").click(() => {
+                let name = $("#txtname").val();
+                let roomname = $("input[type=radio]:checked").val();
+                if (roomname == null) {
+                    alert("Lütfen Oda Seçiniz.");
+                    return;
+                }
+                connection.invoke("SendNameByGroup", name, roomname);
+            });
+            connection.on("receiveMessageByGroup", (Name, RoomID) => {
+                let listName;
+                if (RoomID == 1) {
+                    listName = "tekirdagRoomList";
+                }
+               else if (RoomID == 2) {
+                    listName = "ankaraRoomList";
+                }
+                else 
+                {
+                    listName = "bursaRoomList";
+                }
+                $(`#${listName}`).append(`<li class="list-group-item">${Name}</li>`);
+            });
+
+            $("input[type=radio]").change(() => {
+                let value = $(`input[type=radio]:checked`).val();
+                if (value == "Tekirdağ") {
+                    connection.invoke("AddToGroup", value);
+                    connection.invoke("RemoveFromGroup", "Ankara");
+                    connection.invoke("RemoveFromGroup", "Bursa");
+                }
+               else if (value == "Bursa") {
+                    connection.invoke("AddToGroup", value);
+                    connection.invoke("RemoveFromGroup", "Ankara");
+                    connection.invoke("RemoveFromGroup", "Tekirdağ");
+                }
+                else 
+                {
+                    connection.invoke("AddToGroup", value);
+                    connection.invoke("RemoveFromGroup", "Tekirdağ");
+                    connection.invoke("RemoveFromGroup", "Bursa");
+                }
             });
         });
     </script>
@@ -41,6 +97,45 @@
                 Client Sayısı: <strong id="ClientCount"></strong>
             </div>
         </div>
+
+    </div>
+    <div class="col-md-8 offset-2">
+        <ul class="list-group" id="nameslist"></ul>
     </div>
 </div>
 
+<div class="row">
+    <div class="col-md-8 offset-2">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="roomGroup" value="Tekirdağ" />
+            <label class="form-check-label">Tekirdağ Odası</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="roomGroup" value="Ankara" />
+            <label class="form-check-label">Ankara Odası</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="radio" name="roomGroup" value="Bursa" />
+            <label class="form-check-label">Bursa Odası</label>
+        </div>
+    </div>
+
+
+    <div class="col-md-8 offset-2">
+        <hr />
+        <div class="row">
+            <div class="col-md-4">
+                <h2>Tekirdağ Odası</h2>
+                <ul class="list-group" id="tekirdagRoomList"></ul>
+            </div>
+            <div class="col-md-4">
+                <h2>Ankara Odası</h2>
+                <ul class="list-group" id="ankaraRoomList"></ul>
+            </div>
+            <div class="col-md-4">
+                <h2>Bursa Odası</h2>
+                <ul class="list-group" id="bursaRoomList"></ul>
+            </div>
+        </div>
+    </div>
+</div>
